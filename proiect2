@@ -1,0 +1,122 @@
+import random
+
+# Funcția pentru inițializarea matricei cu bomboane
+def initializeaza_matrice(randuri=11, coloane=11):
+    matrice = [[random.randint(1, 6) for _ in range(coloane)] for _ in range(randuri)]
+    return matrice
+
+# Funcția pentru a căuta formațiunile și tipurile acestora
+def gaseste_formatiuni(matrice):
+    meciuri = set()
+    tipuri_meciuri = []
+    randuri = len(matrice)
+    coloane = len(matrice[0])
+
+    # Căutăm formațiuni pe rânduri
+    for r in range(randuri):
+        for c in range(coloane - 2):
+            if matrice[r][c] == matrice[r][c + 1] == matrice[r][c + 2] != 0:
+                meciuri.update([(r, c), (r, c + 1), (r, c + 2)])
+                tipuri_meciuri.append((3, "linie"))
+            if c < coloane - 3 and matrice[r][c] == matrice[r][c + 1] == matrice[r][c + 2] == matrice[r][c + 3] != 0:
+                meciuri.update([(r, c), (r, c + 1), (r, c + 2), (r, c + 3)])
+                tipuri_meciuri.append((4, "linie"))
+            if c < coloane - 4 and matrice[r][c] == matrice[r][c + 1] == matrice[r][c + 2] == matrice[r][c + 3] == matrice[r][c + 4] != 0:
+                meciuri.update([(r, c), (r, c + 1), (r, c + 2), (r, c + 3), (r, c + 4)])
+                tipuri_meciuri.append((5, "linie"))
+
+    # Căutăm formațiuni pe coloane
+    for c in range(coloane):
+        for r in range(randuri - 2):
+            if matrice[r][c] == matrice[r + 1][c] == matrice[r + 2][c] != 0:
+                meciuri.update([(r, c), (r + 1, c), (r + 2, c)])
+                tipuri_meciuri.append((3, "linie"))
+            if r < randuri - 3 and matrice[r][c] == matrice[r + 1][c] == matrice[r + 2][c] == matrice[r + 3][c] != 0:
+                meciuri.update([(r, c), (r + 1, c), (r + 2, c), (r + 3, c)])
+                tipuri_meciuri.append((4, "linie"))
+            if r < randuri - 4 and matrice[r][c] == matrice[r + 1][c] == matrice[r + 2][c] == matrice[r + 3][c] == matrice[r + 4][c] != 0:
+                meciuri.update([(r, c), (r + 1, c), (r + 2, c), (r + 3, c), (r + 4, c)])
+                tipuri_meciuri.append((5, "linie"))
+
+    # Căutăm formațiuni tip L sau T
+    for r in range(randuri - 2):
+        for c in range(coloane - 2):
+            if (matrice[r][c] == matrice[r][c + 1] == matrice[r][c + 2] == matrice[r + 1][c] == matrice[r + 2][c] != 0):
+                meciuri.update([(r, c), (r, c + 1), (r, c + 2), (r + 1, c), (r + 2, c)])
+                tipuri_meciuri.append((5, "L"))
+            if (matrice[r][c] == matrice[r][c + 1] == matrice[r][c + 2] == matrice[r + 1][c + 2] == matrice[r + 2][c + 2] != 0):
+                meciuri.update([(r, c), (r, c + 1), (r, c + 2), (r + 1, c + 2), (r + 2, c + 2)])
+                tipuri_meciuri.append((5, "L"))
+            if (matrice[r][c] == matrice[r][c + 1] == matrice[r][c + 2] == matrice[r + 1][c + 1] == matrice[r + 2][c + 1] != 0):
+                meciuri.update([(r, c), (r, c + 1), (r, c + 2), (r + 1, c + 1), (r + 2, c + 1)])
+                tipuri_meciuri.append((5, "T"))
+
+    return meciuri, tipuri_meciuri
+
+# Eliminarea formațiunilor și repopularea
+def elimina_formatiuni(matrice, meciuri):
+    for r, c in meciuri:
+        matrice[r][c] = 0
+
+    # Repopularea bomboanelor
+    for c in range(len(matrice[0])):
+        rand_gol = len(matrice) - 1
+        for r in range(len(matrice) - 1, -1, -1):
+            if matrice[r][c] != 0:
+                matrice[rand_gol][c] = matrice[r][c]
+                rand_gol -= 1
+        for r in range(rand_gol, -1, -1):
+            matrice[r][c] = random.randint(1, 6)
+
+def calculeaza_punctaj(tipuri_meciuri):
+    punctaj_total = 0
+    for lungime, tip in tipuri_meciuri:
+        if tip == "linie":
+            if lungime == 3:
+                punctaj_total += 5
+            elif lungime == 4:
+                punctaj_total += 10
+            elif lungime == 5:
+                punctaj_total += 50
+        elif tip == "L":
+            punctaj_total += 20
+        elif tip == "T":
+            punctaj_total += 30
+    return punctaj_total
+
+def joaca_joc():
+    matrice = initializeaza_matrice()
+    punctaj_total = 0
+    interschimbari = 0
+
+    while punctaj_total < 10000:
+        meciuri, tipuri_meciuri = gaseste_formatiuni(matrice)
+
+        if meciuri:
+            punctaj = calculeaza_punctaj(tipuri_meciuri)
+            punctaj_total += punctaj
+            elimina_formatiuni(matrice, meciuri)
+            interschimbari += 1
+        else:
+            matrice = initializeaza_matrice()  # Refacerea matricei
+            interschimbari += 1
+
+    return punctaj_total, interschimbari
+
+def testeaza_jocuri(numar_jocuri=100):
+    punctaje_totale = []
+    interschimbari_totale = []
+
+    for i in range(numar_jocuri):
+        punctaj, interschimbari = joaca_joc()
+        punctaje_totale.append(punctaj)
+        interschimbari_totale.append(interschimbari)
+        print(f"Joc {i + 1}: Punctaj = {punctaj}, Interschimbări = {interschimbari}")
+
+    media_punctajului = sum(punctaje_totale) / numar_jocuri
+    media_interschimbari = sum(interschimbari_totale) / numar_jocuri
+    print(f"\nMedia punctajului după {numar_jocuri} jocuri: {media_punctajului:.2f}")
+    print(f"Media interschimbărilor după {numar_jocuri} jocuri: {media_interschimbari:.2f}")
+
+# Rulăm testul pentru 100 de jocuri
+testeaza_jocuri(100)
